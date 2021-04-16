@@ -1,44 +1,68 @@
-import React, {useState} from "react";
-import {Form, Button, Card} from 'react-bootstrap';
+import React, { useState } from "react";
+import { Form, Button, Card } from "react-bootstrap";
+import { firestore } from "./firebase/firebase.util";
 
 export default function PostForm(props) {
-    const {addPostToList} = props
-    const [checked, setChecked] = useState(false);
-    const [title, setTitle] = useState('');
-    const [body, setBody] = useState('');
+  const { addPostToList, setLoading } = props;
+  const [checked, setChecked] = useState(false);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
 
-    
-    function handleSubmit(event){
-        event.preventDefault()
-        addPostToList({id: String(Math.random()*1000+100), title, body})
-        setTitle("")
-        setBody("")
-        setChecked(false)
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setLoading(true);
+
+    try {
+      const postRef = firestore.collection("posts");
+      const data = await postRef.add({ title, body });
+      addPostToList({
+        id: data.id,
+        title,
+        body,
+      });
+    } catch (error) {
+      throw error.message;
     }
 
-    
-    
-    return (
-        <Form onSubmit={handleSubmit}>
-            <Form.Check 
-            type="checkbox" 
-            label="Add Post" 
-            checked={checked} 
-            onChange={() => setChecked((prevState) => !prevState)}
+    setTitle("");
+    setBody("");
+    setChecked(false);
+    setLoading(false);
+  }
+
+  return (
+    <Form onSubmit={handleSubmit}>
+      <Form.Check
+        type="checkbox"
+        label="Add Post"
+        checked={checked}
+        onChange={() => setChecked((prevState) => !prevState)}
+      />
+      {checked && (
+        <>
+          <Form.Group>
+            <Form.Control
+              type="input"
+              placeholder="Title"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
             />
-            {checked && (
-                <>
-            <Form.Group>
-                <Form.Control type="input" placeholder="Title" value={title} onChange={(event) => setTitle(event.target.value)}/>
-            </Form.Group>
-            <Form.Group>
-                <Form.Label>Post Body</Form.Label>
-                <Form.Control as="textarea" rows={10} value={body} onChange={(event) => setBody(event.target.value)}/>
-            </Form.Group>
-            <Button variant="primary" type="submit">Submit</Button>
-            </>
-            )}
-            <hr></hr>
-        </Form>
-    )
+          </Form.Group>
+          <Form.Group>
+            <Form.Label>Post Body</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={10}
+              value={body}
+              onChange={(event) => setBody(event.target.value)}
+            />
+          </Form.Group>
+          <Button variant="primary" type="submit">
+            Submit
+          </Button>
+        </>
+      )}
+      <hr></hr>
+    </Form>
+  );
 }

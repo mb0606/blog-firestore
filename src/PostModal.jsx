@@ -1,29 +1,36 @@
-import React, {useState, useEffect} from "react"
-import {Modal, Spinner} from "react-bootstrap"
+import React, { useState, useEffect } from "react";
+import { Modal, Spinner } from "react-bootstrap";
+import { firestore } from "./firebase/firebase.util";
 
-export default function PostModal(props){
-    const {postId, show, closePostModal} = props
-    const [post, setPost] = useState(null)
+export default function PostModal(props) {
+  const { postId, show, closePostModal } = props;
+  const [post, setPost] = useState(null);
 
-    useEffect(() => {
-        fetch(`https://jsonplaceholder.typicode.com/posts/${postId}`)
-  .then(response => response.json())
-  .then(json => setPost(json))
-    },[setPost, postId])
-
-    if(!post){
-        return <Spinner animation="border" />
+  useEffect(() => {
+    async function getPost() {
+      try {
+        const postRef = firestore.collection("posts");
+        const postDoc = await postRef.doc(postId).get();
+        setPost(postDoc.data());
+      } catch (error) {
+        throw error.message;
+      }
     }
-    
-    return (
-        <div>
-            <Modal show={show} onHide={closePostModal}>
-                <Modal.Header closeButton>
-                    <Modal.Title>{post?.title}</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>{post?.body}</Modal.Body>
+    getPost();
+  }, [postId, setPost]);
 
-            </Modal>
-        </div>
-    )
+  if (!post) {
+    return <Spinner animation="border" />;
+  }
+
+  return (
+    <div>
+      <Modal show={show} onHide={closePostModal}>
+        <Modal.Header closeButton>
+          <Modal.Title>{post?.title}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>{post?.body}</Modal.Body>
+      </Modal>
+    </div>
+  );
 }
